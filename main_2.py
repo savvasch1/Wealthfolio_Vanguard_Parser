@@ -36,9 +36,10 @@ mapping_dict = {
     "lifestrategy 100% equity fund - accumulation": "VGL100A",
     "lifestrategy 60% equity fund - accumulation": "VGLS60A",
     "ftse 100 index unit trust accumulation": "VAFTIGA",
-    "u.s. equity index fund - accumulation": "VUSEIDA.L",   # New mapping.
-    "v3am.xlon.gb": "V3AM.L",                                 # New mapping.
-    "vmid.xlon.gb": "VMID.L"                                 # New mapping.
+    "u.s. equity index fund - accumulation": "VUSEIDA.L",   
+    "v3am.xlon.gb": "V3AM.L",                                 
+    "vmid.xlon.gb": "VMID.L",
+    "vanguard germany all cap ucits etf": "VGER.L"                                 
 }
 
 def get_mapped_symbol(details):
@@ -115,7 +116,13 @@ def extract_symbol(details, activity_type):
       3. For DEPOSIT, WITHDRAWAL, or INTEREST trades, force the symbol to "$CASH-GBP".
       4. If nothing is found, return NULL (NaN).
     """
-    # Priority 1: Look for text within parentheses.
+
+    # Priority 1: Check mapping dictionary.
+    mapped = get_mapped_symbol(details)
+    if mapped is not None:
+        return mapped
+    
+    # Priority 2: Look for text within parentheses.
     candidates = re.findall(r'\(([^)]+)\)', details)
     valid_candidates = []
     for cand in candidates:
@@ -127,11 +134,6 @@ def extract_symbol(details, activity_type):
         if not sym.endswith(".L"):
             sym += ".L"
         return sym
-
-    # Priority 2: Check mapping dictionary.
-    mapped = get_mapped_symbol(details)
-    if mapped is not None:
-        return mapped
 
     # Priority 3: For DEPOSIT, WITHDRAWAL, or INTEREST, force cash symbol.
     if activity_type in ["DEPOSIT", "WITHDRAWAL", "INTEREST"]:
@@ -176,7 +178,7 @@ def main():
     # Open file dialog to select the input CSV file.
     root = tk.Tk()
     root.withdraw()
-    file_path = filedialog.askopenfilename(title="Select Pension CSV file", filetypes=[("CSV Files", "*.csv")])
+    file_path = filedialog.askopenfilename(title="Select CSV input file", filetypes=[("CSV Files", "*.csv")])
     if not file_path:
         print("No file selected. Exiting.")
         return
