@@ -1,9 +1,3 @@
-/input.csv
-/output.csv
-/savvas_isa.csv
-/savvas_pension.csv
+
 /venv
-/wealthfolio.db
-/wealthfolio_backup_20251114_170059.db
-/wealthfolio_backup_20251114_170059.db-shm
-/wealthfolio_backup_20251114_170059.db-wal
+*.csv
