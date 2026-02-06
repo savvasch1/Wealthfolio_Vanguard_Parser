@@ -251,11 +251,11 @@ def main():
         # Clear Amount.
         df.loc[mask_other_fee, 'Amount'] = np.nan
 
-    # For BUY and SELL rows: format unitPrice to 6 decimal places and clear Amount.
+    # For BUY and SELL rows: round unitPrice to 6 decimal places and clear Amount.
     mask_buy_sell = df['ActivityType'].isin(['BUY', 'SELL'])
     if mask_buy_sell.any():
         df.loc[mask_buy_sell, 'unitPrice'] = df.loc[mask_buy_sell, 'unitPrice'].apply(
-            lambda x: format(abs(x), '.6f') if pd.notnull(x) else np.nan
+            lambda x: round(abs(x), 10) if pd.notnull(x) else np.nan
         )
         df.loc[mask_buy_sell, 'Amount'] = np.nan
 
