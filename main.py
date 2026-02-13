@@ -1,8 +1,9 @@
-import pandas as pd
-import numpy as np
 import re
 import tkinter as tk
 from tkinter import filedialog
+
+import numpy as np
+import pandas as pd
 
 # Updated mapping dictionary for specific fund names.
 mapping_dict = {
@@ -36,11 +37,12 @@ mapping_dict = {
     "lifestrategy 100% equity fund - accumulation": "VGL100A",
     "lifestrategy 60% equity fund - accumulation": "VGLS60A",
     "ftse 100 index unit trust accumulation": "VAFTIGA",
-    "u.s. equity index fund - accumulation": "VUSEIDA.L",   
-    "v3am.xlon.gb": "V3AM.L",                                 
+    "u.s. equity index fund - accumulation": "VUSEIDA.L",
+    "v3am.xlon.gb": "V3AM.L",
     "vmid.xlon.gb": "VMID.L",
-    "vanguard germany all cap ucits etf": "VGER.L"                                 
+    "vanguard germany all cap ucits etf": "VGER.L",
 }
+
 
 def get_mapped_symbol(details):
     """
@@ -51,17 +53,31 @@ def get_mapped_symbol(details):
     for key, mapped_sym in mapping_dict.items():
         if key in details_lower:
             # List of symbols that should not have ".L" appended automatically.
-            no_append_list = ["vageiga", "vaglega", "vangmsa", "vanempa", "vapejpa", "vanjisa",
-                              "vmom.l", "vaftiga", "vuseida.l", "v3am.l"]
-            if not mapped_sym.endswith(".L") and mapped_sym.lower() not in no_append_list:
+            no_append_list = [
+                "vageiga",
+                "vaglega",
+                "vangmsa",
+                "vanempa",
+                "vapejpa",
+                "vanjisa",
+                "vmom.l",
+                "vaftiga",
+                "vuseida.l",
+                "v3am.l",
+            ]
+            if (
+                not mapped_sym.endswith(".L")
+                and mapped_sym.lower() not in no_append_list
+            ):
                 mapped_sym += ".L"
             return mapped_sym
     return None
 
+
 def extract_activity_type(details):
     """
     Determines activity type based on keywords in the details string.
-    
+
     Prioritizes checking for "sold" and "bought" before dividend keywords.
     Mapping rules (case-insensitive):
       - If trimmed details equal "deposit for investment purchases", returns DEPOSIT.
@@ -102,9 +118,10 @@ def extract_activity_type(details):
         return "INTEREST"
     if "withdrawal" in d_lower:
         return "WITHDRAWAL"
-    if re.search(r'\bdiv\b', details, re.IGNORECASE) or "dividend" in d_lower:
+    if re.search(r"\bdiv\b", details, re.IGNORECASE) or "dividend" in d_lower:
         return "DIVIDEND"
     return "UNKNOWN"
+
 
 def extract_symbol(details, activity_type):
     """
@@ -121,9 +138,9 @@ def extract_symbol(details, activity_type):
     mapped = get_mapped_symbol(details)
     if mapped is not None:
         return mapped
-    
+
     # Priority 2: Look for text within parentheses.
-    candidates = re.findall(r'\(([^)]+)\)', details)
+    candidates = re.findall(r"\(([^)]+)\)", details)
     valid_candidates = []
     for cand in candidates:
         if "buy" in cand.lower() or "sell" in cand.lower():
@@ -142,23 +159,25 @@ def extract_symbol(details, activity_type):
     # Priority 4: Nothing found; return NULL.
     return np.nan
 
+
 def extract_quantity(details, activity_type):
     """
     Extracts the quantity from the details string.
-    
+
     - For FEE rows, returns None (to be handled separately).
     - Otherwise, attempts to extract a numeric value following "Bought" or "Sold".
     """
     if activity_type == "FEE":
         return None
-    match = re.search(r'(Bought|Sold)\s+([\d,\.]+)', details, re.IGNORECASE)
+    match = re.search(r"(Bought|Sold)\s+([\d,\.]+)", details, re.IGNORECASE)
     if match:
-        qty_str = match.group(2).replace(',', '')
+        qty_str = match.group(2).replace(",", "")
         try:
             return float(qty_str)
         except ValueError:
             return None
     return None
+
 
 def calculate_unit_price(amount, quantity):
     """
@@ -174,107 +193,133 @@ def calculate_unit_price(amount, quantity):
     except Exception:
         return None
 
+
 def main():
     # Open file dialog to select the input CSV file.
     root = tk.Tk()
     root.withdraw()
-    file_path = filedialog.askopenfilename(title="Select CSV input file", filetypes=[("CSV Files", "*.csv")])
+    file_path = filedialog.askopenfilename(
+        title="Select CSV input file", filetypes=[("CSV Files", "*.csv")]
+    )
     if not file_path:
         print("No file selected. Exiting.")
         return
 
     try:
         # Read CSV using an encoding that can handle non-UTF8 characters.
-        df = pd.read_csv(file_path, encoding='latin1')
+        df = pd.read_csv(file_path, encoding="latin1")
     except Exception as e:
         print("Error reading the CSV file:", e)
         return
 
     # Convert the Date column from "DD/MM/YYYY" to "YYYY-MM-DD".
     try:
-        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True).dt.strftime('%Y-%m-%d')
+        df["Date"] = pd.to_datetime(df["Date"], dayfirst=True).dt.strftime("%Y-%m-%d")
     except Exception as e:
         print("Error processing the Date column:", e)
 
     # Ensure Details column is text.
-    df['Details'] = df['Details'].astype(str)
+    df["Details"] = df["Details"].astype(str)
 
     # Clean and convert Amount column to numeric.
-    if 'Amount' in df.columns:
-        df['Amount'] = df['Amount'].replace(r'[\£\$,]', '', regex=True)
-        df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+    if "Amount" in df.columns:
+        df["Amount"] = df["Amount"].replace(r"[\£\$,]", "", regex=True)
+        df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
         # Store raw amount values.
-        df['rawAmount'] = df['Amount']
+        df["rawAmount"] = df["Amount"]
 
     # Determine ActivityType from Details.
-    df['ActivityType'] = df['Details'].apply(extract_activity_type)
+    df["ActivityType"] = df["Details"].apply(extract_activity_type)
 
     # New condition: if Details contain "Payment by Faster" and raw Amount is negative, set ActivityType to WITHDRAWAL.
-    mask_payment_by_faster = df['Details'].str.contains("Payment by Faster", case=False, na=False) & (df['rawAmount'] < 0)
+    mask_payment_by_faster = df["Details"].str.contains(
+        "Payment by Faster", case=False, na=False
+    ) & (df["rawAmount"] < 0)
     if mask_payment_by_faster.any():
-        df.loc[mask_payment_by_faster, 'ActivityType'] = "WITHDRAWAL"
+        df.loc[mask_payment_by_faster, "ActivityType"] = "WITHDRAWAL"
 
     # Force all Amounts to be positive.
-    df['Amount'] = df['Amount'].abs()
+    df["Amount"] = df["Amount"].abs()
 
     # Extract Symbol using updated function.
-    df['Symbol'] = df.apply(lambda row: extract_symbol(row['Details'], row['ActivityType']), axis=1)
+    df["Symbol"] = df.apply(
+        lambda row: extract_symbol(row["Details"], row["ActivityType"]), axis=1
+    )
 
     # Extract Quantity.
-    df['Quantity'] = df.apply(lambda row: extract_quantity(row['Details'], row['ActivityType']), axis=1)
+    df["Quantity"] = df.apply(
+        lambda row: extract_quantity(row["Details"], row["ActivityType"]), axis=1
+    )
 
     # Force Quantity = 1 for INTEREST rows.
-    df.loc[df['ActivityType'] == 'INTEREST', 'Quantity'] = 1
+    df.loc[df["ActivityType"] == "INTEREST", "Quantity"] = 1
 
     # Calculate unitPrice (Amount/Quantity) where applicable.
-    df['unitPrice'] = df.apply(lambda row: calculate_unit_price(row['Amount'], row['Quantity']), axis=1)
+    df["unitPrice"] = df.apply(
+        lambda row: calculate_unit_price(row["Amount"], row["Quantity"]), axis=1
+    )
 
     # Set constant currency.
-    df['currency'] = "GBP"
+    df["currency"] = "GBP"
 
     # Create fee column: for FEE rows, fee = absolute Amount.
-    df['fee'] = df.apply(lambda row: abs(row['Amount']) if row['ActivityType'] == 'FEE' else np.nan, axis=1)
+    df["fee"] = df.apply(
+        lambda row: abs(row["Amount"]) if row["ActivityType"] == "FEE" else np.nan,
+        axis=1,
+    )
 
     # Special Handling for "Account Fee for the period".
-    mask_account_fee = df['Details'].str.contains("Account Fee for the period", case=False, na=False)
+    mask_account_fee = df["Details"].str.contains(
+        "Account Fee for the period", case=False, na=False
+    )
     if mask_account_fee.any():
-        df.loc[mask_account_fee, 'Symbol'] = "$CASH-GBP"
-        df.loc[mask_account_fee, 'Quantity'] = 1
-        df.loc[mask_account_fee, 'unitPrice'] = df.loc[mask_account_fee, 'Amount']
+        df.loc[mask_account_fee, "Symbol"] = "$CASH-GBP"
+        df.loc[mask_account_fee, "Quantity"] = 1
+        df.loc[mask_account_fee, "unitPrice"] = df.loc[mask_account_fee, "Amount"]
         # Amount remains unchanged.
 
     # Handling for other FEE rows (excluding account fee rows).
-    mask_other_fee = (df['ActivityType'] == "FEE") & (~mask_account_fee)
+    mask_other_fee = (df["ActivityType"] == "FEE") & (~mask_account_fee)
     if mask_other_fee.any():
-        df.loc[mask_other_fee, 'Quantity'] = 1
-        df.loc[mask_other_fee, 'unitPrice'] = 1.0
+        df.loc[mask_other_fee, "Quantity"] = 1
+        df.loc[mask_other_fee, "unitPrice"] = 1.0
         # Clear Amount.
-        df.loc[mask_other_fee, 'Amount'] = np.nan
+        df.loc[mask_other_fee, "Amount"] = np.nan
 
     # For BUY and SELL rows: round unitPrice to 6 decimal places and clear Amount.
-    mask_buy_sell = df['ActivityType'].isin(['BUY', 'SELL'])
+    mask_buy_sell = df["ActivityType"].isin(["BUY", "SELL"])
     if mask_buy_sell.any():
-        df.loc[mask_buy_sell, 'unitPrice'] = df.loc[mask_buy_sell, 'unitPrice'].apply(
+        df.loc[mask_buy_sell, "unitPrice"] = df.loc[mask_buy_sell, "unitPrice"].apply(
             lambda x: round(abs(x), 10) if pd.notnull(x) else np.nan
         )
-        df.loc[mask_buy_sell, 'Amount'] = np.nan
+        df.loc[mask_buy_sell, "Amount"] = np.nan
 
     # For WITHDRAWAL rows: force Amount to be positive and set Symbol.
-    mask_withdrawal = df['ActivityType'] == "WITHDRAWAL"
+    mask_withdrawal = df["ActivityType"] == "WITHDRAWAL"
     if mask_withdrawal.any():
-        df.loc[mask_withdrawal, 'Symbol'] = "$CASH-GBP"
-        df.loc[mask_withdrawal, 'Amount'] = df.loc[mask_withdrawal, 'Amount'].abs()
+        df.loc[mask_withdrawal, "Symbol"] = "$CASH-GBP"
+        df.loc[mask_withdrawal, "Amount"] = df.loc[mask_withdrawal, "Amount"].abs()
 
     # Arrange final columns.
-    final_columns = ['Date', 'Symbol', 'Quantity', 'ActivityType', 'unitPrice', 'currency', 'fee', 'Amount']
+    final_columns = [
+        "Date",
+        "Symbol",
+        "Quantity",
+        "ActivityType",
+        "unitPrice",
+        "currency",
+        "fee",
+        "Amount",
+    ]
     final_df = df[final_columns]
 
-    output_filename = 'output.csv'
+    output_filename = "output.csv"
     try:
         final_df.to_csv(output_filename, index=False, na_rep="")
         print("Output CSV file created successfully:", output_filename)
     except Exception as e:
         print("Error writing the output CSV file:", e)
+
 
 if __name__ == "__main__":
     main()
