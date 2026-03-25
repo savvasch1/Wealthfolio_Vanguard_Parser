@@ -390,9 +390,9 @@ def main():
     root.geometry("300x300+50+50")
     root.resizable(False, False)
 
+    tk.Label(root, text="Version 0.1 -- 25 March 2025").pack()
 
-    #tk.Button(root, text="Convert CSV file", command= convert_csv).pack(side="left", padx=10, pady=1)
-    tk.Button(root, text="Convert EXCEL file", command= convert_excel).pack(side="left", padx=10, pady=1)
+    tk.Button(root, text="Convert EXCEL file", command= convert_excel).pack(padx=30,pady=30)
 
     root.mainloop()
 
