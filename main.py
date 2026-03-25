@@ -1,9 +1,10 @@
 import re
 import tkinter as tk
 from tkinter import filedialog
-
+from openpyxl import load_workbook
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 # Updated mapping dictionary for specific fund names.
 mapping_dict = {
@@ -194,23 +195,79 @@ def calculate_unit_price(amount, quantity):
         return None
 
 
-def main():
-    # Open file dialog to select the input CSV file.
-    root = tk.Tk()
-    root.withdraw()
+def convert_excel():
+    """
+    Docstring for convert_excel
+    """
+
+    #Select file to process or do nothing
     file_path = filedialog.askopenfilename(
-        title="Select CSV input file", filetypes=[("CSV Files", "*.csv")]
+        title="Select excel input file", filetypes=[("Excel Files", "*.xlsx"),]
     )
     if not file_path:
         print("No file selected. Exiting.")
         return
+    
+    #if file is found, clean and start returning dataframes
+    wb = load_workbook(file_path)
 
-    try:
-        # Read CSV using an encoding that can handle non-UTF8 characters.
-        df = pd.read_csv(file_path, encoding="latin1")
-    except Exception as e:
-        print("Error reading the CSV file:", e)
-        return
+    # Delete the worksheet "Summary" if it exists
+    for sheet_name in wb.sheetnames:
+        if sheet_name.lower() == "summary":
+            wb.remove(wb[sheet_name])
+
+    # Dictionary to hold our final DataFrames
+    dataframes = {}
+
+    # Process all remaining worksheets
+    for ws in wb.worksheets:
+        # Remove rows 1 to 4
+        ws.delete_rows(1, 4)
+
+        # Find first instance of "Balance" in column A
+        balance_row = None
+        for row_idx in range(1, ws.max_row + 1):
+            cell_value = ws.cell(row=row_idx, column=1).value
+            if cell_value is not None and str(cell_value).strip() == "Balance":
+                balance_row = row_idx
+                break
+
+        # Delete "Balance" row and everything below it
+        if balance_row is not None:
+            rows_to_delete = ws.max_row - balance_row + 1
+            ws.delete_rows(balance_row, rows_to_delete)
+
+         # Read the modified worksheet as a pandas DataFrame
+        data = list(ws.values)
+        
+        if data:
+            # Assuming the new first row (after deleting rows 1-4) is the header
+            columns = data[0]
+            df = pd.DataFrame(data[1:], columns=columns)
+
+            # Store the DataFrame using the worksheet title as the dictionary key
+            dataframes[ws.title] = df
+        else:
+            # Fallback if the worksheet is completely empty
+            pass
+            
+    #initiate convertion of dataframes
+    for sheet_name, df in dataframes.items():
+        convert(df, sheet_name)
+
+
+
+def convert(df,given_name):
+    """
+    process dataframe
+    """
+
+    # try:
+    #     # Read CSV using an encoding that can handle non-UTF8 characters.
+    #     df = pd.read_csv(file_path, encoding="latin1")
+    # except Exception as e:
+    #     print("Error reading the CSV file:", e)
+    #     return
 
     # Convert the Date column from "DD/MM/YYYY" to "YYYY-MM-DD".
     try:
@@ -286,7 +343,7 @@ def main():
         # Clear Amount.
         df.loc[mask_other_fee, "Amount"] = np.nan
 
-    # For BUY and SELL rows: round unitPrice to 6 decimal places and clear Amount.
+    # For BUY and SELL rows: round unitPrice to 10 decimal places and clear Amount.
     mask_buy_sell = df["ActivityType"].isin(["BUY", "SELL"])
     if mask_buy_sell.any():
         df.loc[mask_buy_sell, "unitPrice"] = df.loc[mask_buy_sell, "unitPrice"].apply(
@@ -313,13 +370,31 @@ def main():
     ]
     final_df = df[final_columns]
 
-    output_filename = "output.csv"
+    desktop = Path.home() / "Desktop"
+    filename = desktop / f"{given_name}.csv"
+   
     try:
-        final_df.to_csv(output_filename, index=False, na_rep="")
-        print("Output CSV file created successfully:", output_filename)
+        final_df.to_csv(filename, index=False, na_rep="")
+        print("Output CSV file created successfully:", filename)
+
     except Exception as e:
         print("Error writing the output CSV file:", e)
 
+def main():
+    # Open file dialog to select the input CSV file.
+    root = tk.Tk()
+
+    root.title("Vanguard Transactions converter")
+    root.minsize(200, 200)
+    root.maxsize(500, 500)
+    root.geometry("300x300+50+50")
+    root.resizable(False, False)
+
+
+    #tk.Button(root, text="Convert CSV file", command= convert_csv).pack(side="left", padx=10, pady=1)
+    tk.Button(root, text="Convert EXCEL file", command= convert_excel).pack(side="left", padx=10, pady=1)
+
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
