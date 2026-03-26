@@ -394,7 +394,7 @@ def main():
     root.geometry("300x300+50+50")
     root.resizable(False, False)
 
-    tk.Label(root, text="Version 0.1 -- 25 March 2025").pack()
+    tk.Label(root, text="Version 0.2 -- 26 March 2025").pack()
 
     tk.Button(root, text="Convert EXCEL file", command= convert_excel).pack(padx=30,pady=30)
 
