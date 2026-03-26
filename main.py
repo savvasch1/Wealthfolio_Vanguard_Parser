@@ -269,13 +269,6 @@ def convert(df,given_name):
     process dataframe
     """
 
-    # try:
-    #     # Read CSV using an encoding that can handle non-UTF8 characters.
-    #     df = pd.read_csv(file_path, encoding="latin1")
-    # except Exception as e:
-    #     print("Error reading the CSV file:", e)
-    #     return
-
     # Convert the Date column from "DD/MM/YYYY" to "YYYY-MM-DD".
     try:
         df["Date"] = pd.to_datetime(df["Date"], dayfirst=True).dt.strftime("%Y-%m-%d")
