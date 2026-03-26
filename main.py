@@ -144,9 +144,16 @@ def extract_symbol(details, activity_type):
     candidates = re.findall(r"\(([^)]+)\)", details)
     valid_candidates = []
     for cand in candidates:
+        #check for buy/sell comments in parenthesis
         if "buy" in cand.lower() or "sell" in cand.lower():
             continue
+        #check for currency definition
+        elif "eur" == cand.lower() or "usd" == cand.lower() or "gbp" ==cand.lower():
+            continue
+        
         valid_candidates.append(cand.strip())
+
+    #proceed if found valid candidates
     if valid_candidates:
         sym = valid_candidates[0]
         if not sym.endswith(".L"):
