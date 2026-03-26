@@ -1,6 +1,6 @@
 # Vanguard Transactions Converter
 
-A small Tkinter desktop app that converts Vanguard transaction exports into normalized CSV files. 
+A small Tkinter desktop app that converts Vanguard transaction exports into normalized CSV files that can be imported directly to Wealthfolio.
 
 ## What it does
 
