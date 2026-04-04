@@ -371,9 +371,6 @@ def convert(df,given_name):
     ]
     final_df = df[final_columns]
 
-    #add identifier column to cirvumvent Wealthfolio's Duplicate trade checker.
-    #without the comment the two rows appear identical to Wealthfolio and parsing fails
-    final_df["Comment"] = final_df.index + 1
 
     desktop = Path.home() / "Desktop"
     filename = desktop / f"{given_name}.csv"
