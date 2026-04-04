@@ -41,6 +41,7 @@ mapping_dict = {
     "u.s. equity index fund - accumulation": "VUSEIDA.L",
     "v3am.xlon.gb": "V3AM.L",
     "vmid.xlon.gb": "VMID.L",
+    "usd corporate bond ucits etf - distributing": "VUCP.L",
     "vanguard germany all cap ucits etf": "VGER.L",
 }
 
