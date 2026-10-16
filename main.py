@@ -43,6 +43,7 @@ mapping_dict = {
     "vmid.xlon.gb": "VMID.L",
     "usd corporate bond ucits etf - distributing": "VUCP.L",
     "vanguard germany all cap ucits etf": "VGER.L",
+    "ftse global all cap index fund accumulation":"VAFTGAG",
 }
 
 
@@ -100,6 +101,8 @@ def extract_activity_type(details):
     d_lower = details.lower()
     if "account fee for the period" in d_lower:
         return "FEE"
+    if "regular deposit" in d_lower:
+            return "DEPOSIT"
     if "deposit for investment purposes" in d_lower:
         return "DEPOSIT"
     if "deposit via direct credit" in d_lower:
