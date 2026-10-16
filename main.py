@@ -43,7 +43,7 @@ mapping_dict = {
     "vmid.xlon.gb": "VMID.L",
     "usd corporate bond ucits etf - distributing": "VUCP.L",
     "vanguard germany all cap ucits etf": "VGER.L",
-    "ftse global all cap index fund accumulation":"VAFTGAG",
+    "ftse global all cap index fund accumulation":"VAFTGAG.L",
 }
 
 
